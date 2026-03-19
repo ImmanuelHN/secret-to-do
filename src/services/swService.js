@@ -8,7 +8,7 @@ let swRegistration = null;
 export async function registerSW() {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    const reg = await navigator.serviceWorker.register('./sw.js', { scope: '/secret-to-do/' });
     swRegistration = reg;
     console.log('[SW] Registered:', reg.scope);
     return reg;

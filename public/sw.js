@@ -36,7 +36,7 @@ self.addEventListener('notificationclick', e => {
         setTimeout(() => {
           self.registration.showNotification(notification.title, {
             body: `⏰ Snoozed: ${notification.body}`,
-            icon: '/favicon.svg',
+            icon: './favicon.svg',
             tag: notification.tag + '-snoozed',
             data,
             actions: notification.actions,
@@ -56,7 +56,7 @@ self.addEventListener('notificationclick', e => {
           cs[0].focus();
           cs[0].postMessage({ type: 'NOTIF_RESCHEDULE', tag: notification.tag, data });
         } else {
-          clients.openWindow('/').then(c => {
+          clients.openWindow('./').then(c => {
             if (c) c.postMessage({ type: 'NOTIF_RESCHEDULE', tag: notification.tag, data });
           });
         }
@@ -69,7 +69,7 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(
     clients.matchAll({ type: 'window' }).then(cs => {
       if (cs.length > 0) return cs[0].focus();
-      return clients.openWindow('/');
+      return clients.openWindow('./');
     })
   );
 });
@@ -81,7 +81,7 @@ self.addEventListener('push', e => {
   e.waitUntil(
     self.registration.showNotification(payload.title || 'Secret To-Do', {
       body:    payload.body || '',
-      icon:    '/favicon.svg',
+      icon:    './favicon.svg',
       tag:     payload.tag || 'push',
       data:    payload.data || {},
       actions: payload.actions || [],
