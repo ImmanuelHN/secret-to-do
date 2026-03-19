@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import TaskAttachments from './TaskAttachments';
 import { X, Flag, Zap, Calendar, Clock, FolderOpen, Trash2 } from 'lucide-react';
 import { db } from '../db/database';
 import { useAppStore } from '../store/appStore';
@@ -116,6 +117,12 @@ export default function EditTaskModal({ taskId, onClose }) {
               <input type="time" className="input" value={form.reminder_time || ''}
                 onChange={e => set('reminder_time', e.target.value)} />
             </div>
+          </div>
+
+          {/* Attachments */}
+          <div className="field">
+            <label className="field-label">📎 Attachments</label>
+            {form?.id && <TaskAttachments taskId={form.id} />}
           </div>
 
           {/* Completion toggle */}

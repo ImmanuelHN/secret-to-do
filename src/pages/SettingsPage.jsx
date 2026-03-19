@@ -59,6 +59,8 @@ export default function SettingsPage() {
   const [waterEnabled, setWaterEnabled]   = useState(false);
   const [waterInterval, setWaterInterval] = useState(60);
   const [mealEnabled, setMealEnabled]     = useState(false);
+  const [snoozeMin, setSnoozeMin]         = useState(10);
+  const [pinTimeout, setPinTimeoutLocal]  = useState(0);
   const [meals, setMeals] = useState({ breakfast: '08:00', lunch: '13:00', dinner: '20:00' });
   const [saved, setSaved] = useState(false);
 
@@ -69,6 +71,8 @@ export default function SettingsPage() {
       const me  = await getSetting('meal_enabled');
       const mt  = await getSetting('meal_times');
       if (wi)  setWaterInterval(wi);
+      const sm = await getSetting('snooze_minutes'); if (sm != null) setSnoozeMin(sm);
+      const pt = await getSetting('pin_timeout');    if (pt != null) setPinTimeoutLocal(pt);
       if (we)  setWaterEnabled(we);
       if (me)  setMealEnabled(me);
       if (mt)  setMeals(JSON.parse(mt));
@@ -98,6 +102,8 @@ export default function SettingsPage() {
 
   const save = async () => {
     await setSetting('water_reminder_interval', waterInterval);
+    await setSetting('snooze_minutes', snoozeMin);
+    await setSetting('pin_timeout', pinTimeout);
     await setSetting('meal_times', JSON.stringify(meals));
     if (waterEnabled && notifPermission === 'granted') await startWaterReminder();
     if (mealEnabled  && notifPermission === 'granted') await scheduleMealReminders();
@@ -321,6 +327,45 @@ export default function SettingsPage() {
         </div>
       </SectionCard>
 
+
+      {/* ── Snooze Duration ────────────────────── */}
+      <SectionCard title="Snooze Duration" icon={Bell} iconColor="var(--accent)">
+        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
+          Snooze reminders for
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[5, 10, 15, 30].map(v => (
+            <button key={v} onClick={() => setSnoozeMin(v)} style={{
+              flex: 1, padding: '9px', borderRadius: 'var(--radius-sm)',
+              background: snoozeMin === v ? 'var(--accent-dim)' : 'var(--bg-overlay)',
+              color: snoozeMin === v ? 'var(--accent)' : 'var(--text-tertiary)',
+              border: `1px solid ${snoozeMin === v ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
+              cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 140ms',
+            }}>{v}m</button>
+          ))}
+        </div>
+        <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '8px' }}>
+          Applied to water, meal, habit, and task reminders
+        </div>
+      </SectionCard>
+
+      {/* ── Auto-Lock Timeout ──────────────────── */}
+      <SectionCard title="Auto-Lock Timeout" icon={Lock} iconColor="var(--text-tertiary)">
+        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
+          Lock app after inactivity (requires PIN to be set)
+        </div>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {[{v:0,l:'Never'},{v:1,l:'1 min'},{v:5,l:'5 min'},{v:15,l:'15 min'},{v:30,l:'30 min'}].map(({v,l}) => (
+            <button key={v} onClick={() => setPinTimeoutLocal(v)} style={{
+              padding: '7px 12px', borderRadius: 'var(--radius-sm)',
+              background: pinTimeout === v ? 'var(--accent-dim)' : 'var(--bg-overlay)',
+              color: pinTimeout === v ? 'var(--accent)' : 'var(--text-tertiary)',
+              border: `1px solid ${pinTimeout === v ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
+              cursor: 'pointer', fontSize: '12px', fontWeight: 600, transition: 'all 140ms',
+            }}>{l}</button>
+          ))}
+        </div>
+      </SectionCard>
 
       {/* ── PIN Lock ───────────────────────────── */}
       <SectionCard title="PIN Lock" icon={pinEnabled ? Lock : LockOpen} iconColor={pinEnabled ? "var(--green)" : "var(--text-tertiary)"}>

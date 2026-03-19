@@ -1,9 +1,10 @@
-import { Menu, Plus, Zap } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 
 const TITLES = {
   planner:   'Daily Planner',
   dashboard: 'Dashboard',
+  charts:    'Charts',
   search:    'Search',
   habits:    'Habits',
   vault:     'Vault',
@@ -11,9 +12,9 @@ const TITLES = {
 };
 
 export default function Header() {
-  const { toggleSidebar, activeView, activeFolderId, folders, setAddTaskModal, setQuickAddOpen } = useAppStore();
+  const { toggleSidebar, activeView, activeFolderId, folders } = useAppStore();
   const folder = folders.find(f => f.id === activeFolderId);
-  const title = activeFolderId && activeView === 'folder'
+  const title  = activeFolderId && activeView === 'folder'
     ? folder?.name || 'Folder'
     : TITLES[activeView] || 'Secret To-Do';
 
@@ -34,23 +35,7 @@ export default function Header() {
           {activeView === 'planner' && <div className="header-sub">{today}</div>}
         </div>
       </div>
-
-      <div className="header-actions">
-        {/* Quick add button */}
-        <button
-          className="btn btn-secondary"
-          style={{ padding: '7px 12px', gap: '5px' }}
-          onClick={() => setQuickAddOpen(true)}
-          title="Quick add (N)"
-        >
-          <Zap size={14} />
-          <span className="hidden-mobile" style={{ fontSize: '12px' }}>Quick</span>
-        </button>
-        <button className="btn btn-primary" onClick={() => setAddTaskModal(true)}>
-          <Plus size={15} />
-          <span>New Task</span>
-        </button>
-      </div>
+      {/* Actions moved to FloatingBar */}
     </header>
   );
 }

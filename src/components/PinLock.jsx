@@ -1,28 +1,54 @@
 import { useState, useEffect, useRef } from 'react';
-import { Lock, Delete } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 const KEYS = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
 
 export default function PinLock({ onUnlock }) {
-  const [input, setInput] = useState('');
-  const [error, setError] = useState(false);
-  const [shake, setShake] = useState(false);
+  const [input, setInput]   = useState('');
+  const [error, setError]   = useState(false);
+  const [shake, setShake]   = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [locked, setLocked]     = useState(false); // locked after 5 failed
+  const [lockTimer, setLockTimer] = useState(0);
+  const timerRef = useRef(null);
+
   const storedPin = localStorage.getItem('app_pin') || '0000';
 
+  // Lockout countdown
+  useEffect(() => {
+    if (locked && lockTimer > 0) {
+      timerRef.current = setInterval(() => {
+        setLockTimer(t => {
+          if (t <= 1) { clearInterval(timerRef.current); setLocked(false); setAttempts(0); return 0; }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [locked]);
+
   const press = (k) => {
+    if (locked) return;
     if (k === '⌫') { setInput(p => p.slice(0,-1)); setError(false); return; }
     if (k === '') return;
     if (input.length >= 4) return;
     const next = input + k;
     setInput(next);
+
     if (next.length === 4) {
       setTimeout(() => {
         if (next === storedPin) {
           onUnlock();
         } else {
+          const newAttempts = attempts + 1;
+          setAttempts(newAttempts);
           setError(true);
           setShake(true);
           setTimeout(() => { setShake(false); setInput(''); setError(false); }, 700);
+          if (newAttempts >= 5) {
+            setLocked(true);
+            setLockTimer(30); // 30 second lockout
+          }
         }
       }, 120);
     }
@@ -36,7 +62,7 @@ export default function PinLock({ onUnlock }) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [input]);
+  }, [input, locked]);
 
   return (
     <div style={{
@@ -49,85 +75,80 @@ export default function PinLock({ onUnlock }) {
       {/* Logo */}
       <div style={{ textAlign: 'center' }}>
         <div style={{
-          width: 56, height: 56, borderRadius: 16,
+          width: 60, height: 60, borderRadius: 18,
           background: 'var(--accent)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 14px',
-          boxShadow: '0 4px 20px var(--accent-glow)',
+          margin: '0 auto 16px',
+          boxShadow: '0 4px 24px var(--accent-glow)',
+          animation: 'float 3s ease-in-out infinite',
         }}>
-          <Lock size={24} color="white" />
+          <Lock size={26} color="white" />
         </div>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '24px', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
           Secret To-Do
         </div>
-        <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
-          Enter your PIN to continue
+        <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '8px' }}>
+          {locked ? `🔒 Too many attempts. Wait ${lockTimer}s` : 'Enter your PIN to continue'}
         </div>
       </div>
 
       {/* Dots */}
       <div style={{
-        display: 'flex', gap: '14px',
+        display: 'flex', gap: '16px',
         animation: shake ? 'pinShake 0.5s ease' : 'none',
       }}>
         <style>{`
           @keyframes pinShake {
             0%,100%{transform:translateX(0)}
-            20%{transform:translateX(-8px)}
-            40%{transform:translateX(8px)}
-            60%{transform:translateX(-6px)}
-            80%{transform:translateX(6px)}
+            20%{transform:translateX(-10px)}
+            40%{transform:translateX(10px)}
+            60%{transform:translateX(-7px)}
+            80%{transform:translateX(7px)}
           }
         `}</style>
         {[0,1,2,3].map(i => (
           <div key={i} style={{
-            width: 14, height: 14,
+            width: 16, height: 16,
             borderRadius: '50%',
             background: i < input.length
               ? (error ? 'var(--red)' : 'var(--accent)')
               : 'var(--border-default)',
-            transition: 'background 150ms, transform 150ms',
-            transform: i < input.length ? 'scale(1.2)' : 'scale(1)',
-            boxShadow: i < input.length && !error ? '0 0 8px var(--accent-glow)' : 'none',
+            transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
+            transform: i < input.length ? 'scale(1.25)' : 'scale(1)',
+            boxShadow: i < input.length && !error ? '0 0 12px var(--accent-glow)' : 'none',
           }} />
         ))}
       </div>
 
-      {error && (
+      {error && attempts < 5 && (
         <div style={{ fontSize: '13px', color: 'var(--red)', fontWeight: 500, marginTop: '-20px' }}>
-          Incorrect PIN
+          Incorrect PIN · {5 - attempts} attempt{5 - attempts !== 1 ? 's' : ''} left
         </div>
       )}
 
       {/* Keypad */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 72px)',
-        gap: '12px',
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 76px)', gap: '12px' }}>
         {KEYS.map((k, i) => (
           <button
             key={i}
             onClick={() => press(k)}
-            disabled={k === ''}
+            disabled={k === '' || locked}
             style={{
-              width: 72, height: 72,
+              width: 76, height: 76,
               borderRadius: '50%',
-              border: k === '⌫'
-                ? '1px solid var(--border-default)'
-                : k === '' ? 'none' : '1px solid var(--border-subtle)',
-              background: k === '' ? 'none'
-                : k === '⌫' ? 'var(--bg-overlay)'
-                : 'var(--bg-elevated)',
+              border: k === '⌫' ? '1px solid var(--border-default)' : k === '' ? 'none' : '1px solid var(--border-subtle)',
+              background: k === '' ? 'none' : k === '⌫' ? 'var(--bg-overlay)' : 'var(--bg-elevated)',
               color: k === '⌫' ? 'var(--text-secondary)' : 'var(--text-primary)',
               fontFamily: 'var(--font-display)',
-              fontSize: k === '⌫' ? '20px' : '22px',
+              fontSize: k === '⌫' ? '22px' : '24px',
               fontWeight: 600,
-              cursor: k === '' ? 'default' : 'pointer',
+              cursor: k === '' || locked ? 'default' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 120ms',
               boxShadow: k !== '' && k !== '⌫' ? 'var(--shadow-sm)' : 'none',
+              opacity: locked ? 0.4 : 1,
             }}
-            onMouseDown={e => { if (k) e.currentTarget.style.transform = 'scale(0.92)'; }}
+            onMouseDown={e => { if (k && !locked) e.currentTarget.style.transform = 'scale(0.90)'; }}
             onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
