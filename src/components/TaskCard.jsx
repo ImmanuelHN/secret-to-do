@@ -7,6 +7,7 @@ import { handleRecurOnComplete } from '../services/recurService';
 export default function TaskCard({ task, folders = [], showFolder = true }) {
   const { selectedTaskIds, toggleSelectTask, setEditTaskId } = useAppStore();
   const [done, setDone] = useState(!!task.completed);
+  const [busy, setBusy] = useState(false); // prevent double-click
   const isSelected  = selectedTaskIds.has(task.id);
   const isSelecting = selectedTaskIds.size > 0;
 
@@ -20,13 +21,25 @@ export default function TaskCard({ task, folders = [], showFolder = true }) {
 
   const toggle = async (e) => {
     e.stopPropagation();
+    if (busy) return; // prevent double-tap
     if (isSelecting) { toggleSelectTask(task.id); return; }
+
+    setBusy(true);
     const next = !done;
-    setDone(next);
-    await db.tasks.update(task.id, { completed: next ? 1 : 0 });
-    // Handle recurring: spawn next occurrence when marking complete
-    if (next && task.recur) {
-      await handleRecurOnComplete(task);
+    setDone(next); // optimistic UI update
+
+    try {
+      await db.tasks.update(task.id, { completed: next ? 1 : 0 });
+      // Spawn next recurrence only when marking COMPLETE (not uncomplete)
+      if (next && task.recur) {
+        await handleRecurOnComplete(task);
+      }
+    } catch (err) {
+      // Revert on failure
+      setDone(!next);
+      console.error('Toggle failed', err);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -34,6 +47,8 @@ export default function TaskCard({ task, folders = [], showFolder = true }) {
   const openEdit  = (e) => { e.stopPropagation(); setEditTaskId(task.id); };
   const remove    = async (e) => { e.stopPropagation(); await db.tasks.delete(task.id); };
 
+  // Hide completed tasks from view with fade-out (they're filtered by parent anyway)
+  // But keep them visible with strikethrough in the completed section
   return (
     <div
       className={`task-card priority-${task.priority} ${done ? 'completed' : ''}`}
@@ -41,15 +56,22 @@ export default function TaskCard({ task, folders = [], showFolder = true }) {
         outline: isSelected ? '2px solid var(--accent)' : 'none',
         outlineOffset: '1px',
         cursor: isSelecting ? 'pointer' : 'default',
+        opacity: busy ? 0.7 : 1,
+        transition: 'opacity 200ms',
       }}
       onClick={handleCardClick}
       onMouseDown={onPressStart} onMouseUp={onPressEnd}
       onTouchStart={onPressStart} onTouchEnd={onPressEnd}
     >
+      {/* Checkbox */}
       <button
         className={`checkbox ${done ? 'checked' : ''}`}
-        style={isSelected ? { background: 'var(--accent)', borderColor: 'var(--accent)' } : {}}
+        style={{
+          ...(isSelected ? { background: 'var(--accent)', borderColor: 'var(--accent)' } : {}),
+          cursor: busy ? 'not-allowed' : 'pointer',
+        }}
         onClick={toggle}
+        disabled={busy}
       >
         {(done || isSelected) && (
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none">

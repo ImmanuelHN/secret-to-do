@@ -1143,3 +1143,15 @@ input[type="time"].input { cursor: pointer; }
 }
 .folder-item:hover .folder-edit-btn { opacity: 1; }
 .folder-edit-btn:hover { color: var(--accent); background: var(--accent-dim); }
+
+/* ─── FIX: sidebar scroll should not be hidden by floating bar on mobile ─── */
+@media (max-width: 768px) {
+  .app-sidebar .sidebar-scroll {
+    padding-bottom: 90px !important;
+  }
+}
+
+/* ─── FIX: sidebar z-index must be above floating bar ─── */
+.app-sidebar.open {
+  z-index: 55 !important;
+}

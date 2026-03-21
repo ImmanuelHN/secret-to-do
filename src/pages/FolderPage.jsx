@@ -162,7 +162,13 @@ export default function FolderPage() {
   const pct       = tasks.length === 0 ? 0 : Math.round(completed.length / tasks.length * 100);
 
   const toggleShopItem = async (task) => {
-    await db.tasks.update(task.id, { completed: task.completed ? 0 : 1 });
+    const next = task.completed ? 0 : 1;
+    await db.tasks.update(task.id, { completed: next });
+    // Also handle recurring spawn for shopping list items
+    if (next === 1 && task.recur) {
+      const { handleRecurOnComplete } = await import('../services/recurService');
+      await handleRecurOnComplete(task);
+    }
   };
 
   const deleteTask = async (id) => {

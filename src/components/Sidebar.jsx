@@ -64,9 +64,9 @@ export default function Sidebar() {
       <aside className={`app-sidebar ${sidebarOpen ? 'open' : ''}`}>
 
         <div className="sidebar-logo">
-          <div className="sidebar-logo-mark">S</div>
+          <img src="/secret-to-do/logo.png" alt="SToDo" style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', objectFit: 'cover', flexShrink: 0 }} />
           <div>
-            <div className="sidebar-logo-text">Secret To-Do</div>
+            <div className="sidebar-logo-text">SToDo</div>
             <div className="sidebar-logo-sub">local · private · offline</div>
           </div>
           <button className="btn-icon" style={{ marginLeft: 'auto' }} onClick={closeSidebar}>
@@ -74,7 +74,7 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <div className="sidebar-scroll">
+        <div className="sidebar-scroll" style={{ paddingBottom: '16px' }}>
           <div className="sidebar-section-label">Menu</div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             {NAV.map(({ id, label, icon: Icon }) => (
@@ -125,7 +125,7 @@ export default function Sidebar() {
           <div style={{ height: '20px' }} />
         </div>
 
-        <div className="theme-bar">
+        <div className="theme-bar" style={{ marginBottom: '0px' }}>
           <div className="theme-bar-label">Theme</div>
           <div className="theme-pills">
             {THEMES.map(({ id, label, icon: Icon }) => (

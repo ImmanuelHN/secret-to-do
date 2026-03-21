@@ -74,18 +74,13 @@ export default function PinLock({ onUnlock }) {
     }}>
       {/* Logo */}
       <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 60, height: 60, borderRadius: 18,
-          background: 'var(--accent)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 16px',
-          boxShadow: '0 4px 24px var(--accent-glow)',
-          animation: 'float 3s ease-in-out infinite',
-        }}>
-          <Lock size={26} color="white" />
-        </div>
+        <img src="/secret-to-do/logo.png" alt="SToDo"
+          style={{ width: 80, height: 80, borderRadius: 20, objectFit: 'cover',
+            margin: '0 auto 16px', display: 'block',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            animation: 'float 3s ease-in-out infinite' }} />
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '24px', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-          Secret To-Do
+          SToDo
         </div>
         <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '8px' }}>
           {locked ? `🔒 Too many attempts. Wait ${lockTimer}s` : 'Enter your PIN to continue'}

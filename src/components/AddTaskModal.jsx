@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { X, Flag, Zap, Calendar, Clock, FolderOpen, Repeat } from 'lucide-react';
+import { X, Flag, Zap, Calendar, Clock, FolderOpen, Repeat, Paperclip } from 'lucide-react';
 import { db } from '../db/database';
 import { useAppStore } from '../store/appStore';
 import { scheduleTaskReminder } from '../services/reminderService';
 import SmartFolderHint from './SmartFolderHint';
 import VoiceInput from './VoiceInput';
+import TaskAttachments from './TaskAttachments';
 
 const RECUR_OPTS = [
   { value: null,      label: 'None' },
@@ -23,6 +24,7 @@ export default function AddTaskModal({ onClose }) {
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [savedTaskId, setSavedTaskId] = useState(null); // After save, show attachments
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -40,9 +42,45 @@ export default function AddTaskModal({ onClose }) {
       if (form.reminder_time && form.due_date === today) {
         scheduleTaskReminder({ id, ...form });
       }
-      onClose();
+      // Instead of closing immediately, show attachment step
+      setSavedTaskId(id);
+      setSaving(false);
     } catch { setErr('Failed to save.'); setSaving(false); }
   };
+
+  // Step 2: attachment screen shown after task is saved
+  if (savedTaskId) {
+    return (
+      <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal-panel">
+          <div className="modal-header">
+            <span className="modal-title">Add Attachments</span>
+            <button className="btn-icon" onClick={onClose}><X size={17} /></button>
+          </div>
+          <div className="modal-body">
+            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>✅</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>
+                "{form.title}" saved!
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                Optionally add photos or videos to this task
+              </div>
+            </div>
+            <div className="field">
+              <label className="field-label"><Paperclip size={12} /> Attachments (optional)</label>
+              <TaskAttachments taskId={savedTaskId} />
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -78,7 +116,7 @@ export default function AddTaskModal({ onClose }) {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
               <textarea className="input" rows={2} placeholder="Add notes…"
                 value={form.description} onChange={e => set('description', e.target.value)} />
-              <VoiceInput onResult={text => set('description', prev => prev ? prev + ' ' + text : text)} />
+              <VoiceInput onResult={text => set('description', p => p ? p + ' ' + text : text)} />
             </div>
           </div>
 
@@ -120,7 +158,6 @@ export default function AddTaskModal({ onClose }) {
             </div>
           </div>
 
-          {/* Recurring */}
           <div className="field">
             <label className="field-label"><Repeat size={12} /> Repeat</label>
             <div className="seg-control">
